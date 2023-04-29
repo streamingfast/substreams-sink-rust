@@ -10,15 +10,16 @@ use std::{
 use tokio::time::sleep;
 use tokio_retry::strategy::ExponentialBackoff;
 
-use crate::{
-    pb::sf::substreams::v1::{
-        response::Message, BlockScopedData, ForkStep, Modules, Request, Response,
-    },
-    substreams::SubstreamsEndpoint,
+use crate::pb::sf::substreams::rpc::v2::{
+    response::Message, BlockScopedData, BlockUndoSignal, Request, Response,
 };
+use crate::pb::sf::substreams::v1::Modules;
+
+use crate::substreams::SubstreamsEndpoint;
 
 pub enum BlockResponse {
     New(BlockScopedData),
+    Undo(BlockUndoSignal),
 }
 
 pub struct SubstreamsStream {
@@ -47,6 +48,7 @@ impl SubstreamsStream {
     }
 }
 
+// Create the Stream implementation that streams blocks with auto-reconnection.
 fn stream_blocks(
     endpoint: Arc<SubstreamsEndpoint>,
     cursor: Option<String>,
@@ -70,16 +72,15 @@ fn stream_blocks(
                 start_block_num,
                 start_cursor: latest_cursor.clone(),
                 stop_block_num,
-                fork_steps: vec![ForkStep::StepNew as i32, ForkStep::StepUndo as i32],
-                irreversibility_condition: "".to_string(),
+                final_blocks_only: false,
                 modules: modules.clone(),
-                output_modules: vec![output_module_name.clone()],
+                output_module: output_module_name.clone(),
                 // There is usually no good reason for you to consume the stream development mode (so switching `true`
                 // to `false`). If you do switch it, be aware that more than one output module will be send back to you,
                 // and the current code in `process_block_scoped_data` (within your 'main.rs' file) expects a single
                 // module.
                 production_mode: true,
-                ..Default::default()
+                debug_initial_store_snapshot_for_modules: vec![],
             }).await;
 
             match result {
@@ -95,6 +96,15 @@ fn stream_blocks(
 
                                 let cursor = block_scoped_data.cursor.clone();
                                 yield BlockResponse::New(block_scoped_data);
+
+                                latest_cursor = cursor;
+                            },
+                            BlockProcessedResult::BlockUndoSignal(block_undo_signal) => {
+                                // Reset backoff because we got a good value from the stream
+                                backoff = ExponentialBackoff::from_millis(500).max_delay(Duration::from_secs(45));
+
+                                let cursor = block_undo_signal.last_valid_cursor.clone();
+                                yield BlockResponse::Undo(block_undo_signal);
 
                                 latest_cursor = cursor;
                             },
@@ -140,6 +150,7 @@ fn stream_blocks(
 enum BlockProcessedResult {
     Skip(),
     BlockScopedData(BlockScopedData),
+    BlockUndoSignal(BlockUndoSignal),
     TonicError(tonic::Status),
 }
 
@@ -152,8 +163,11 @@ async fn process_substreams_response(
     };
 
     match response.message {
-        Some(Message::Data(block_scoped_data)) => {
+        Some(Message::BlockScopedData(block_scoped_data)) => {
             BlockProcessedResult::BlockScopedData(block_scoped_data)
+        }
+        Some(Message::BlockUndoSignal(block_undo_signal)) => {
+            BlockProcessedResult::BlockUndoSignal(block_undo_signal)
         }
         Some(Message::Progress(_progress)) => {
             // The `ModulesProgress` messages goal is to report active parallel processing happening
@@ -169,6 +183,8 @@ async fn process_substreams_response(
             //     .modules
             //     .iter()
             //     .filter_map(|module| {
+            //         use crate::pb::sf::substreams::rpc::v2::module_progress::Type;
+
             //         if let Type::ProcessedRanges(range) = module.r#type.as_ref().unwrap() {
             //             Some(format!(
             //                 "{} @ [{}]",
@@ -185,7 +201,7 @@ async fn process_substreams_response(
             //         }
             //     })
             //     .collect();
-            //
+
             // println!("Progess {}", progresses.join(", "));
 
             BlockProcessedResult::Skip()

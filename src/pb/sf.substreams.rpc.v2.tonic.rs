@@ -86,7 +86,7 @@ pub mod stream_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/sf.substreams.v1.Stream/Blocks",
+                "/sf.substreams.rpc.v2.Stream/Blocks",
             );
             self.inner.server_streaming(request.into_request(), path, codec).await
         }

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::pb::sf::substreams::v1::BlockRange;
+use crate::pb::sf::substreams::rpc::v2::BlockRange;
 
 include!("pb.rs");
 
