@@ -5,7 +5,7 @@ This repository show cases a functional base Rust project that consumes a Substr
 To run:
 
 ```bash
-SUBSTREAMS_API_TOKEN="<StreamingFast API Token>" cargo run https://mainnet.eth.streamingfast.io:443 <path/to/substreams.spkg> <module_name>
+SUBSTREAMS_API_TOKEN="<StreamingFast API Token>" cargo run -- https://mainnet.eth.streamingfast.io:443 https://github.com/streamingfast/substreams-eth-block-meta/releases/download/v0.5.1/substreams-eth-block-meta-v0.5.1.spkg db_out
 ```
 
 ### Details
