@@ -1,6 +1,6 @@
 ## Substreams Sink Rust
 
-This repository show cases a functional base Rust project that consumes a Substreams `.spkg` (local file only).
+This repository show cases a functional base Rust project that consumes a Substreams `.spkg` (local or remote file).
 
 To run:
 
@@ -24,7 +24,7 @@ loop {
 }
 ```
 
-The `main.rs` file accepts three argument the endpoint to reach (in the form `http(s)?://<url>:<port>`), the local file `.spkg` to use for the request and the output module's name to stream from.
+The `main.rs` file accepts three arguments: the substreams endpoint (in the form `http(s)?://<url>:<port>`), the location of the `.spkg` file to use for the request, and the output module's name to stream from.
 
 #### Incomplete Implementation
 
