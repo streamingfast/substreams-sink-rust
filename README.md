@@ -79,7 +79,3 @@ buf generate buf.build/streamingfast/substreams
 ```
 
 This will include only Substreams system Protobufs to decode packages and perform RPC operations.
-
-#### Deprecated Notice
-
-You will see `WARN Plugin "buf.build/prost/crate" is deprecated` when generating the code, this is because `buf.build/community/neoeinstein-create:<version>` is not yet available.

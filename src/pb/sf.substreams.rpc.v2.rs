@@ -103,6 +103,12 @@ pub struct BlockScopedData {
 pub struct SessionInit {
     #[prost(string, tag="1")]
     pub trace_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag="2")]
+    pub resolved_start_block: u64,
+    #[prost(uint64, tag="3")]
+    pub linear_handoff_block: u64,
+    #[prost(uint64, tag="4")]
+    pub max_parallel_workers: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
