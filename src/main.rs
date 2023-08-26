@@ -168,7 +168,7 @@ fn read_block_range(pkg: &Package, module_name: &str) -> Result<(i64, u64), anyh
                 .parse::<u64>()
                 .context("argument <stop> is not a valid integer")?;
 
-            module.initial_block + block_count
+            start as u64 + block_count
         }
         x => x
             .parse::<u64>()
