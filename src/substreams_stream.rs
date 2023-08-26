@@ -62,9 +62,10 @@ fn stream_blocks(
 
     try_stream! {
         loop {
-            println!("Blockstreams disconnected, connecting (endpoint {}, start block {}, cursor {})",
+            println!("Blockstreams disconnected, connecting (endpoint {}, start block {}, stop block {}, cursor {})",
                 &endpoint,
                 start_block_num,
+                stop_block_num,
                 &latest_cursor
             );
 
