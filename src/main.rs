@@ -79,11 +79,11 @@ fn process_block_scoped_data(data: &BlockScopedData) -> Result<(), Error> {
 
     // You can decode the actual Any type received using this code:
     //
-    //     use prost::Message;
-    //     let value = Message::decode::<GeneratedStructName>(data.value.as_slice())?;
+    //     let value = GeneratedStructName::decode(output.value.as_slice())?;
     //
     // Where GeneratedStructName is the Rust code generated for the Protobuf representing
-    // your type.
+    // your type, so you will need generate it using `substreams protogen` and import it from the
+    // `src/pb` folder.
 
     println!(
         "Block #{} - Payload {} ({} bytes)",
