@@ -8,6 +8,8 @@ use std::{env, process::exit, sync::Arc};
 use substreams::SubstreamsEndpoint;
 use substreams_stream::{BlockResponse, SubstreamsStream};
 
+use crate::pb::sf::substreams::sink::entity::v1::EntityChanges;
+
 mod pb;
 mod substreams;
 mod substreams_stream;
@@ -39,6 +41,10 @@ async fn main() -> Result<(), Error> {
 
     let cursor: Option<String> = load_persisted_cursor()?;
 
+    let mut first = true;
+    let mut sum_entity_count = 0usize;
+    let mut sum_bytes = 0usize;
+
     let mut stream = SubstreamsStream::new(
         endpoint.clone(),
         cursor,
@@ -55,8 +61,10 @@ async fn main() -> Result<(), Error> {
                 break;
             }
             Some(Ok(BlockResponse::New(data))) => {
-                process_block_scoped_data(&data)?;
+                process_block_scoped_data(&data, first, &mut sum_entity_count, &mut sum_bytes)?;
                 persist_cursor(data.cursor)?;
+
+                first = false;
             }
             Some(Ok(BlockResponse::Undo(undo_signal))) => {
                 process_block_undo_signal(&undo_signal)?;
@@ -74,23 +82,25 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn process_block_scoped_data(data: &BlockScopedData) -> Result<(), Error> {
+fn process_block_scoped_data(
+    data: &BlockScopedData,
+    first: bool,
+    sum_entity_count: &mut usize,
+    sum_bytes: &mut usize,
+) -> Result<(), Error> {
     let output = data.output.as_ref().unwrap().map_output.as_ref().unwrap();
+    let clock = data.clock.as_ref().unwrap();
+    let value = EntityChanges::decode(output.value.as_slice())?;
 
-    // You can decode the actual Any type received using this code:
-    //
-    //     let value = GeneratedStructName::decode(output.value.as_slice())?;
-    //
-    // Where GeneratedStructName is the Rust code generated for the Protobuf representing
-    // your type, so you will need generate it using `substreams protogen` and import it from the
-    // `src/pb` folder.
+    *sum_entity_count = *sum_entity_count + value.entity_changes.len();
+    *sum_bytes = *sum_bytes + output.value.len();
 
-    println!(
-        "Block #{} - Payload {} ({} bytes)",
-        data.clock.as_ref().unwrap().number,
-        output.type_url.replace("type.googleapis.com/", ""),
-        output.value.len()
-    );
+    if first || clock.number % 10000 == 0 {
+        println!(
+            "Block #{} - EntityChanges | {} total, {} bytes total",
+            clock.number, *sum_entity_count, *sum_bytes
+        );
+    }
 
     Ok(())
 }
