@@ -114,7 +114,7 @@ fn stream_blocks(
                                 // Unauthenticated errors are not retried, we forward the error back to the
                                 // stream consumer which handles it
                                 if status.code() == tonic::Code::Unauthenticated {
-                                    Err(anyhow::Error::new(status.clone()))?;
+                                    return Err(anyhow::Error::new(status.clone()))?;
                                 }
 
                                 println!("Received tonic error {:#}", status);
@@ -142,7 +142,7 @@ fn stream_blocks(
             if let Some(duration) = backoff.next() {
                 sleep(duration).await
             } else {
-                Err(anyhow!("backoff requested to stop retrying, quitting"))?;
+                return Err(anyhow!("backoff requested to stop retrying, quitting"))?;
             }
         }
     }
