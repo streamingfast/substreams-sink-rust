@@ -62,9 +62,10 @@ fn stream_blocks(
 
     try_stream! {
         loop {
-            println!("Blockstreams disconnected, connecting (endpoint {}, start block {}, cursor {})",
+            println!("Blockstreams disconnected, connecting (endpoint {}, start block {}, stop block {}, cursor {})",
                 &endpoint,
                 start_block_num,
+                stop_block_num,
                 &latest_cursor
             );
 
@@ -81,6 +82,7 @@ fn stream_blocks(
                 // module.
                 production_mode: true,
                 debug_initial_store_snapshot_for_modules: vec![],
+                noop_mode: false,
             }).await;
 
             match result {
@@ -113,7 +115,7 @@ fn stream_blocks(
                                 // Unauthenticated errors are not retried, we forward the error back to the
                                 // stream consumer which handles it
                                 if status.code() == tonic::Code::Unauthenticated {
-                                    Err(anyhow::Error::new(status.clone()))?;
+                                    return Err(anyhow::Error::new(status.clone()))?;
                                 }
 
                                 println!("Received tonic error {:#}", status);
@@ -141,7 +143,7 @@ fn stream_blocks(
             if let Some(duration) = backoff.next() {
                 sleep(duration).await
             } else {
-                Err(anyhow!("backoff requested to stop retrying, quitting"))?;
+                return Err(anyhow!("backoff requested to stop retrying, quitting"))?;
             }
         }
     }
@@ -163,6 +165,13 @@ async fn process_substreams_response(
     };
 
     match response.message {
+        Some(Message::Session(session)) => {
+            println!(
+                "Received session message (Workers {}, Trace ID {})",
+                session.max_parallel_workers, &session.trace_id
+            );
+            BlockProcessedResult::Skip()
+        }
         Some(Message::BlockScopedData(block_scoped_data)) => {
             BlockProcessedResult::BlockScopedData(block_scoped_data)
         }

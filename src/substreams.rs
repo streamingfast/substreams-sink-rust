@@ -37,7 +37,6 @@ impl SubstreamsEndpoint {
             _ => panic!("invalid uri scheme for firehose endpoint"),
         }
         .connect_timeout(Duration::from_secs(10))
-        .http2_adaptive_window(true)
         .tcp_keepalive(Some(Duration::from_secs(30)));
 
         let uri = endpoint.uri().to_string();

@@ -11,7 +11,7 @@ plugins:
     opt:
       - no_server=true
 
-  - remote: buf.build/prost/plugins/crate:v0.3.1-1
+  - plugin: buf.build/community/neoeinstein-prost-crate:v0.3.1
     out: src/pb
     opt:
       - include_file=pb.rs
