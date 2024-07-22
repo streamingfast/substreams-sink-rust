@@ -184,7 +184,6 @@ async fn read_package(input: &str) -> Result<Package, anyhow::Error> {
     }
 
     // Assume it's a local file
-
     let content =
         std::fs::read(input).context(format_err!("read package from file '{}'", input))?;
     Package::decode(content.as_ref()).context("decode command")
