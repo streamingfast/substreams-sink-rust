@@ -82,6 +82,7 @@ fn stream_blocks(
                 // module.
                 production_mode: true,
                 debug_initial_store_snapshot_for_modules: vec![],
+                noop_mode: false,
             }).await;
 
             match result {
@@ -164,6 +165,13 @@ async fn process_substreams_response(
     };
 
     match response.message {
+        Some(Message::Session(session)) => {
+            println!(
+                "Received session message (Workers {}, Trace ID {})",
+                session.max_parallel_workers, &session.trace_id
+            );
+            BlockProcessedResult::Skip()
+        }
         Some(Message::BlockScopedData(block_scoped_data)) => {
             BlockProcessedResult::BlockScopedData(block_scoped_data)
         }
