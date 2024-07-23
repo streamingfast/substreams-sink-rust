@@ -5,7 +5,7 @@ use std::{
     pin::Pin,
     sync::Arc,
     task::{Context, Poll},
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tokio::time::sleep;
 use tokio_retry::strategy::ExponentialBackoff;
@@ -59,6 +59,7 @@ fn stream_blocks(
 ) -> impl Stream<Item = Result<BlockResponse, Error>> {
     let mut latest_cursor = cursor.unwrap_or_else(|| "".to_string());
     let mut backoff = ExponentialBackoff::from_millis(500).max_delay(Duration::from_secs(45));
+    let mut last_progress_report = Instant::now();
 
     try_stream! {
         loop {
@@ -91,7 +92,7 @@ fn stream_blocks(
 
                     let mut encountered_error = false;
                     for await response in stream{
-                        match process_substreams_response(response).await {
+                        match process_substreams_response(response, &mut last_progress_report).await {
                             BlockProcessedResult::BlockScopedData(block_scoped_data) => {
                                 // Reset backoff because we got a good value from the stream
                                 backoff = ExponentialBackoff::from_millis(500).max_delay(Duration::from_secs(45));
@@ -158,6 +159,7 @@ enum BlockProcessedResult {
 
 async fn process_substreams_response(
     result: Result<Response, tonic::Status>,
+    last_progress_report: &mut Instant,
 ) -> BlockProcessedResult {
     let response = match result {
         Ok(v) => v,
@@ -178,7 +180,20 @@ async fn process_substreams_response(
         Some(Message::BlockUndoSignal(block_undo_signal)) => {
             BlockProcessedResult::BlockUndoSignal(block_undo_signal)
         }
-        Some(Message::Progress(_progress)) => {
+        Some(Message::Progress(progress)) => {
+            if last_progress_report.elapsed() > Duration::from_secs(30) {
+                let processed_bytes = progress.processed_bytes.unwrap_or_default();
+
+                println!(
+                    "Latest progress message received (Stages: {}, Jobs: {}, Processed Bytes: [Read: {}, Written: {}])",
+                    progress.stages.len(),
+                    progress.running_jobs.len(),
+                    processed_bytes.total_bytes_read,
+                    processed_bytes.total_bytes_written,
+                );
+                *last_progress_report = Instant::now();
+            }
+
             // The `ModulesProgress` messages goal is to report active parallel processing happening
             // either to fill up backward (relative to your request's start block) some missing state
             // or pre-process forward blocks (again relative).
