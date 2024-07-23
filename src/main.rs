@@ -1,4 +1,5 @@
 use anyhow::{format_err, Context, Error};
+use chrono::DateTime;
 use futures03::StreamExt;
 use pb::sf::substreams::rpc::v2::{BlockScopedData, BlockUndoSignal};
 use pb::sf::substreams::v1::Package;
@@ -85,11 +86,19 @@ fn process_block_scoped_data(data: &BlockScopedData) -> Result<(), Error> {
     // your type, so you will need generate it using `substreams protogen` and import it from the
     // `src/pb` folder.
 
+    let clock = data.clock.as_ref().unwrap();
+    let timestamp = clock.timestamp.as_ref().unwrap();
+    let date = DateTime::from_timestamp(timestamp.seconds, timestamp.nanos as u32)
+        .expect("received timestamp should always be valid");
+
     println!(
-        "Block #{} - Payload {} ({} bytes)",
-        data.clock.as_ref().unwrap().number,
+        "Block #{} - Payload {} ({} bytes) - Drift {}s",
+        clock.number,
         output.type_url.replace("type.googleapis.com/", ""),
-        output.value.len()
+        output.value.len(),
+        date.signed_duration_since(chrono::offset::Utc::now())
+            .num_seconds()
+            * -1
     );
 
     Ok(())
