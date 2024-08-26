@@ -1,5 +1,5 @@
 use anyhow::{format_err, Context, Error};
-use chrono::DateTime;
+use chrono::{DateTime, Local};
 use futures03::StreamExt;
 use pb::sf::substreams::rpc::v2::{BlockScopedData, BlockUndoSignal};
 use pb::sf::substreams::v1::Package;
@@ -20,7 +20,7 @@ async fn main() -> Result<(), Error> {
         println!("usage: stream <endpoint> <spkg> <module> [<start>:<stop>]");
         println!();
         println!("The environment variable SUBSTREAMS_API_TOKEN must be set also");
-        println!("and should contain a valid Substream API token.");
+        println!("and should contain a valid Substreams API token.");
         exit(1);
     }
 
@@ -92,26 +92,33 @@ fn process_block_scoped_data(data: &BlockScopedData) -> Result<(), Error> {
         .expect("received timestamp should always be valid");
 
     println!(
-        "Block #{} - Payload {} ({} bytes) - Drift {}s",
+        "Block #{} - Payload {} ({} bytes) - Drift {}s ({})",
         clock.number,
         output.type_url.replace("type.googleapis.com/", ""),
         output.value.len(),
         date.signed_duration_since(chrono::offset::Utc::now())
             .num_seconds()
-            * -1
+            * -1,
+        Local::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
     );
 
     Ok(())
 }
 
-fn process_block_undo_signal(_undo_signal: &BlockUndoSignal) -> Result<(), anyhow::Error> {
+fn process_block_undo_signal(undo_signal: &BlockUndoSignal) -> Result<(), anyhow::Error> {
     // `BlockUndoSignal` must be treated as "delete every data that has been recorded after
     // block height specified by block in BlockUndoSignal". In the example above, this means
     // you must delete changes done by `Block #7b` and `Block #6b`. The exact details depends
     // on your own logic. If for example all your added record contain a block number, a
     // simple way is to do `delete all records where block_num > 5` which is the block num
     // received in the `BlockUndoSignal` (this is true for append only records, so when only `INSERT` are allowed).
-    unimplemented!("you must implement some kind of block undo handling, or request only final blocks (tweak substreams_stream.rs)")
+    // unimplemented!("you must implement some kind of block undo handling, or request only final blocks (tweak substreams_stream.rs)")
+    println!(
+        "BlockUndoSignal received, reverting changes done after block {}",
+        undo_signal.last_valid_block.as_ref().unwrap().number
+    );
+
+    Ok(())
 }
 
 fn persist_cursor(_cursor: String) -> Result<(), anyhow::Error> {

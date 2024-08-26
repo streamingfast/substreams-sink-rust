@@ -60,6 +60,7 @@ fn stream_blocks(
     let mut latest_cursor = cursor.unwrap_or_else(|| "".to_string());
     let mut backoff = ExponentialBackoff::from_millis(500).max_delay(Duration::from_secs(45));
     let mut last_progress_report = Instant::now();
+    let mut last_rpc_report: u64 = 0;
 
     try_stream! {
         loop {
@@ -92,7 +93,7 @@ fn stream_blocks(
 
                     let mut encountered_error = false;
                     for await response in stream{
-                        match process_substreams_response(response, &mut last_progress_report).await {
+                        match process_substreams_response(response, &mut last_progress_report, &mut last_rpc_report).await {
                             BlockProcessedResult::BlockScopedData(block_scoped_data) => {
                                 // Reset backoff because we got a good value from the stream
                                 backoff = ExponentialBackoff::from_millis(500).max_delay(Duration::from_secs(45));
@@ -160,6 +161,7 @@ enum BlockProcessedResult {
 async fn process_substreams_response(
     result: Result<Response, tonic::Status>,
     last_progress_report: &mut Instant,
+    last_rpc_timing: &mut u64,
 ) -> BlockProcessedResult {
     let response = match result {
         Ok(v) => v,
@@ -181,6 +183,23 @@ async fn process_substreams_response(
             BlockProcessedResult::BlockUndoSignal(block_undo_signal)
         }
         Some(Message::Progress(progress)) => {
+            // let total_external: u64 = progress
+            //     .modules_stats
+            //     .iter()
+            //     .map(|module| {
+            //         module
+            //             .external_call_metrics
+            //             .iter()
+            //             .map(|metric| metric.time_ms)
+            //             .sum::<u64>()
+            //     })
+            //     .sum();
+            // let delta = total_external - *last_rpc_timing;
+            // *last_rpc_timing = total_external;
+
+            // // progress.modules_stats.get(0).unwrap().external_call_metrics
+            // println!("RPC timing: {}ms (total {}ms)", delta, total_external);
+
             if last_progress_report.elapsed() > Duration::from_secs(30) {
                 let processed_bytes = progress.processed_bytes.unwrap_or_default();
 
