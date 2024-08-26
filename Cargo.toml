@@ -20,7 +20,7 @@ tokio = { version = "1.27", features = [
 ] }
 tokio-stream = { version = "0.1", features = ["sync"] }
 tokio-retry = "0.3"
-tonic = { version = "0.9", features = ["tls-roots"] }
+tonic = { version = "0.9", features = ["gzip", "tls-roots"] }
 prost = "0.11"
 prost-types = "0.11"
 thiserror = "1"

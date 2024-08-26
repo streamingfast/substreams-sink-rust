@@ -2,6 +2,7 @@ use std::{fmt::Display, sync::Arc, time::Duration};
 
 use http::{uri::Scheme, Uri};
 use tonic::{
+    codec::CompressionEncoding,
     codegen::http,
     metadata::MetadataValue,
     transport::{Channel, ClientTlsConfig},
@@ -68,7 +69,9 @@ impl SubstreamsEndpoint {
 
                 Ok(r)
             },
-        );
+        )
+        .accept_compressed(CompressionEncoding::Gzip)
+        .send_compressed(CompressionEncoding::Gzip);
 
         let response_stream = client.blocks(request).await?;
         let block_stream = response_stream.into_inner();
