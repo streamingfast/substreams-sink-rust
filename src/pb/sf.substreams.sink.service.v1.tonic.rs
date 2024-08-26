@@ -12,7 +12,7 @@ pub mod provider_client {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
-            D: std::convert::TryInto<tonic::transport::Endpoint>,
+            D: TryInto<tonic::transport::Endpoint>,
             D::Error: Into<StdError>,
         {
             let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
@@ -68,10 +68,26 @@ pub mod provider_client {
             self.inner = self.inner.accept_compressed(encoding);
             self
         }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_decoding_message_size(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_encoding_message_size(limit);
+            self
+        }
         pub async fn deploy(
             &mut self,
             request: impl tonic::IntoRequest<super::DeployRequest>,
-        ) -> Result<tonic::Response<super::DeployResponse>, tonic::Status> {
+        ) -> std::result::Result<tonic::Response<super::DeployResponse>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -85,12 +101,17 @@ pub mod provider_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/sf.substreams.sink.service.v1.Provider/Deploy",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("sf.substreams.sink.service.v1.Provider", "Deploy"),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn update(
             &mut self,
             request: impl tonic::IntoRequest<super::UpdateRequest>,
-        ) -> Result<tonic::Response<super::UpdateResponse>, tonic::Status> {
+        ) -> std::result::Result<tonic::Response<super::UpdateResponse>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -104,12 +125,17 @@ pub mod provider_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/sf.substreams.sink.service.v1.Provider/Update",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("sf.substreams.sink.service.v1.Provider", "Update"),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn info(
             &mut self,
             request: impl tonic::IntoRequest<super::InfoRequest>,
-        ) -> Result<tonic::Response<super::InfoResponse>, tonic::Status> {
+        ) -> std::result::Result<tonic::Response<super::InfoResponse>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -123,12 +149,17 @@ pub mod provider_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/sf.substreams.sink.service.v1.Provider/Info",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("sf.substreams.sink.service.v1.Provider", "Info"),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn list(
             &mut self,
             request: impl tonic::IntoRequest<super::ListRequest>,
-        ) -> Result<tonic::Response<super::ListResponse>, tonic::Status> {
+        ) -> std::result::Result<tonic::Response<super::ListResponse>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -142,12 +173,17 @@ pub mod provider_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/sf.substreams.sink.service.v1.Provider/List",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("sf.substreams.sink.service.v1.Provider", "List"),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn pause(
             &mut self,
             request: impl tonic::IntoRequest<super::PauseRequest>,
-        ) -> Result<tonic::Response<super::PauseResponse>, tonic::Status> {
+        ) -> std::result::Result<tonic::Response<super::PauseResponse>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -161,12 +197,17 @@ pub mod provider_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/sf.substreams.sink.service.v1.Provider/Pause",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("sf.substreams.sink.service.v1.Provider", "Pause"),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn stop(
             &mut self,
             request: impl tonic::IntoRequest<super::StopRequest>,
-        ) -> Result<tonic::Response<super::StopResponse>, tonic::Status> {
+        ) -> std::result::Result<tonic::Response<super::StopResponse>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -180,12 +221,17 @@ pub mod provider_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/sf.substreams.sink.service.v1.Provider/Stop",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("sf.substreams.sink.service.v1.Provider", "Stop"),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn resume(
             &mut self,
             request: impl tonic::IntoRequest<super::ResumeRequest>,
-        ) -> Result<tonic::Response<super::ResumeResponse>, tonic::Status> {
+        ) -> std::result::Result<tonic::Response<super::ResumeResponse>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -199,12 +245,17 @@ pub mod provider_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/sf.substreams.sink.service.v1.Provider/Resume",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("sf.substreams.sink.service.v1.Provider", "Resume"),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn remove(
             &mut self,
             request: impl tonic::IntoRequest<super::RemoveRequest>,
-        ) -> Result<tonic::Response<super::RemoveResponse>, tonic::Status> {
+        ) -> std::result::Result<tonic::Response<super::RemoveResponse>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -218,7 +269,12 @@ pub mod provider_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/sf.substreams.sink.service.v1.Provider/Remove",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("sf.substreams.sink.service.v1.Provider", "Remove"),
+                );
+            self.inner.unary(req, path, codec).await
         }
     }
 }

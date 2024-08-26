@@ -71,7 +71,8 @@ impl SubstreamsEndpoint {
             },
         )
         .accept_compressed(CompressionEncoding::Gzip)
-        .send_compressed(CompressionEncoding::Gzip);
+        .send_compressed(CompressionEncoding::Gzip)
+        .max_decoding_message_size(10 * 1024 * 1024);
 
         let response_stream = client.blocks(request).await?;
         let block_stream = response_stream.into_inner();
