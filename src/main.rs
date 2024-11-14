@@ -29,6 +29,8 @@ async fn main() -> Result<(), Error> {
         println!("usage: stream <endpoint> <spkg> <module> [<start>:<stop>]");
         println!();
         println!("<spkg> can either be the full spkg.io link or `spkg_package@version`");
+        println!("Example usage: stream mainnet.injective.streamingfast.io:443 injective-common@v0.2.3 all_events 1:10");
+
         println!("The environment variable SUBSTREAMS_API_TOKEN must be set also");
         println!("and should contain a valid Substream API token.");
         exit(1);
